@@ -51,16 +51,16 @@ class IndexModel:
         backtest_start = pd.Timestamp(start_date)
         backtest_end = pd.Timestamp(end_date)
 
-        temp = self.stocks_ts.asfreq('BM').T.apply(lambda s: pd.Series(s.nlargest(3).index)).T #Top 3 stocks on month end
+        temp = self.stocks_ts.asfreq('BM').T.apply(lambda s: pd.Series(s.nlargest(3).index)).T #Top 3 stocks on previous month end
         temp['combined'] = temp.values.tolist()
         temp = temp['combined']
 
-        self.merged_df = self.stocks_ts.merge(temp, how='outer', left_index=True, right_index=True)
+        self.merged_df = self.stocks_ts.merge(temp, how='outer', left_index=True, right_index=True) # Getting top 3 stocks' name for each row
         self.merged_df['combined'] = self.merged_df['combined'].shift(1).fillna(method='ffill')
-        self.merged_df = self.merged_df[(self.merged_df.index<=backtest_end) & (self.merged_df.index>=backtest_start)]
+        self.merged_df = self.merged_df[(self.merged_df.index<=backtest_end) & (self.merged_df.index>=backtest_start)] # Only for backtesting period
 
         self.merged_df['Index_value'] = self.merged_df.apply(lambda x: self._process_vals(self.merged_df.loc[x.name, x.combined]), axis=1)
-        self.merged_df.loc[self.merged_df.index[0], 'Index_value'] = 100.00
+        self.merged_df.loc[self.merged_df.index[0], 'Index_value'] = 100.00 # Setting the first value of backtesting period to 100
 
 
     def export_values(self, file_name: str) -> None:
